@@ -1,13 +1,21 @@
+
+"""Anthropic va OpenAI-mos API uchun yagona tool-calling interfeysi."""
+from __future__ import annotations
+
+import json
 import os
-import streamlit as st
+import time
+
 import httpx
+import streamlit as st
 from dotenv import load_dotenv
 
-
+# Lokal .env faylini yuklash
 load_dotenv()
 
+
 def get_setting(name: str, default: str = "") -> str:
-    """Avval Streamlit Secrets, keyin lokal .env/environment."""
+    """Avval Streamlit Secrets, keyin environment variables."""
     try:
         value = st.secrets.get(name)
         if value is not None:
@@ -32,6 +40,14 @@ BASE_URL = get_setting("LLM_BASE_URL")
 
 class LLMError(Exception):
     pass
+
+
+_client = httpx.Client(
+    limits=httpx.Limits(
+        max_keepalive_connections=8,
+        keepalive_expiry=60
+    )
+)
 
 
 _client = httpx.Client(limits=httpx.Limits(max_keepalive_connections=8, keepalive_expiry=60))
