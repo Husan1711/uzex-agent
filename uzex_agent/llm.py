@@ -1,17 +1,32 @@
-"""Anthropic va OpenAI-mos API uchun yagona tool-calling interfeysi."""
-from __future__ import annotations
-
-import json
 import os
-import time
+import streamlit as st
 
-import httpx
+from dotenv import load_dotenv
 
-PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
-DEFAULTS = {"anthropic": "claude-sonnet-5-5", "openai": "gpt-4o"}
-MODEL = os.environ.get("LLM_MODEL") or DEFAULTS.get(PROVIDER, "")
-API_KEY = os.environ.get("LLM_API_KEY", "")
-BASE_URL = os.environ.get("LLM_BASE_URL", "")
+load_dotenv()
+
+def get_setting(name: str, default: str = "") -> str:
+    """Avval Streamlit Secrets, keyin lokal .env/environment."""
+    try:
+        value = st.secrets.get(name)
+        if value is not None:
+            return str(value)
+    except Exception:
+        pass
+
+    return os.getenv(name, default)
+
+
+PROVIDER = get_setting("LLM_PROVIDER", "anthropic").lower()
+
+DEFAULTS = {
+    "anthropic": "claude-sonnet-5-5",
+    "openai": "gpt-4o",
+}
+
+MODEL = get_setting("LLM_MODEL") or DEFAULTS.get(PROVIDER, "")
+API_KEY = get_setting("LLM_API_KEY")
+BASE_URL = get_setting("LLM_BASE_URL")
 
 
 class LLMError(Exception):
