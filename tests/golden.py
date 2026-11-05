@@ -1,0 +1,51 @@
+"""Javobi agentdan mustaqil SQL bilan hisoblanadigan test savollari."""
+LATEST = "deal_date=(select max(deal_date) from deals)"
+OK = "not is_cancelled"
+# (savol, kutilgan natija SQL'i; birinchi qatordagi barcha qiymatlar javobda boʻlishi kerak)
+ANSWER = [
+ ("Сколько всего сделок в 2024 году?", "select count(*) from deals where deal_year=2024"),
+ ("2023-yilda nechta bitim tuzilgan?", "select count(*) from deals where deal_year=2023"),
+ ("Сколько сделок аннулировано в 2025 году?", "select count(*) from deals where deal_year=2025 and is_cancelled"),
+ ("Каков общий оборот биржи за 2025 год в сумах?", f"select sum(amount_uzs) from deals where deal_year=2025 and {OK}"),
+ ("2024-yilda sementning umumiy savdo summasi qancha?", f"select sum(amount_uzs) from deals where product='Цемент' and deal_year=2024 and {OK}"),
+ ("Сколько тонн цемента продано в 2024 году?", f"select sum(mass_tons) from deals where product='Цемент' and deal_year=2024 and {OK}"),
+ ("Какая доля экспорта в обороте за всё время, в процентах?", f"select 100.0*sum(amount_uzs) filter(where contract_type='Экспортный')/sum(amount_uzs) from deals where {OK}"),
+ ("Какой объём экспорта в долларах за 2024 год?", f"select sum(amount) from deals where contract_type='Экспортный' and deal_year=2024 and {OK}"),
+ ("Какой товар лидирует по обороту в 2025 году?", f"select product from deals where deal_year=2025 and {OK} group by 1 order by sum(amount_uzs) desc limit 1"),
+ ("2025-yilda qaysi viloyatda savdo summasi eng katta boʻlgan?", f"select region from deals where deal_year=2025 and {OK} group by 1 order by sum(amount_uzs) desc limit 1"),
+ ("Кто крупнейший покупатель хлопка-сырца по сумме?", f"select buyer_inn from deals where product='Хлопок-сырец' and {OK} group by 1 order by sum(amount_uzs) desc limit 1"),
+ ("Какой продавец заключил больше всего сделок?", "select seller_inn,count(*) from deals group by 1 order by 2 desc limit 1"),
+ ("Какова средневзвешенная цена бензина АИ-92 за литр в 2025 году?", f"select round(sum(amount)/sum(volume),2) from deals where brand='АИ-92' and unit='литр' and deal_year=2025 and currency='UZS' and {OK}"),
+ ("Средняя цена карбамида за тонну в 2024 году?", f"select round(sum(amount_uzs)/sum(mass_tons),2) from deals where product='Карбамид' and deal_year=2024 and currency='UZS' and {OK}"),
+ ("Paxta xomashyosi 1-sort 1-sinfning 2025-yildagi oʻrtacha narxi kilogrammi uchun qancha?", f"select round(sum(amount)/sum(volume),2) from deals where product='Хлопок-сырец' and grade='1' and \"class\"='1' and deal_year=2025 and {OK}"),
+ ("Какой курс доллара был 15.03.2024?", "select rate from usd_rates where rate_date='2024-03-15'"),
+ ("Какой был максимальный курс доллара за весь период?", "select max(rate) from usd_rates"),
+ ("Покажи сделку номер 105444: сумма и статус.", "select amount,status from deals where deal_id=105444"),
+ ("Кто покупатель в сделке 190614?", "select buyer_inn from deals where deal_id=190614"),
+ ("Какой код ТН ВЭД у карбамида?", "select distinct hs_code from contracts where product='Карбамид' limit 1"),
+ ("Какой срок оплаты по контракту 100001?", "select payment_term_days from contracts where contract_id=100001"),
+ ("Какой брокер с кодом BK001 и из какого он региона?", "select name,region from brokers where code='BK001'"),
+ ("Какой брокер провёл больше всего сделок на стороне покупателя?", "select buyer_broker,count(*) from deals group by 1 order by 2 desc limit 1"),
+ ("Сколько поставок просрочено в 2024 году?", "select count(*) from deals where deal_year=2024 and delivery_late_days>0"),
+ ("Средний срок от сделки до оплаты в днях?", "select round(avg(days_to_payment),2) from deals"),
+ ("Сколько сделок Форвард в 2023 году?", "select count(*) from deals where contract_form='Форвард' and deal_year=2023"),
+ ("2024-yilda eng koʻp bitim tuzilgan oy qaysi?", "select deal_month from deals where deal_year=2024 group by 1 order by count(*) desc limit 1"),
+ ("Сколько сделок у компании Mate Stroy?", "select count(*) from deals where seller_inn='962584062' or buyer_inn='962584062'"),
+ ("ҲАРАЙЎМ КИМЁ ширкатининг 2025 йилдаги сотуви қанча?", f"select sum(amount_uzs) from deals where seller_inn='915688255' and deal_year=2025 and {OK}"),
+ ("Сколько участников из Андижанской области плательщики НДС?", "select count(*) from participants where region='Andijon viloyati' and vat_payer"),
+]
+# Javobi yoʻq savollar: agent found=false qaytarishi shart
+ABSENT = [
+ "Какая цена золота на бирже в 2025 году?",
+ "2025-yilda oltin qancha sotilgan?",
+ "Сколько сделок с нефтью в 2024 году?",
+ "Сколько сделок было в 2021 году?",
+ "Какой оборот в декабре 2026 года?",
+ "Кто директор компании Mate Stroy?",
+ "Телефон брокера BK001?",
+ "Сколько сделок у компании Alfa Trade?",
+ "ИНН 123456789 qaysi kompaniya?",
+ "Какой будет цена цемента в следующем году?",
+ "Какая прибыль у продавцов цемента?",
+ "Сколько сделок было в Москве?",
+]

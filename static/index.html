@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Birja reyestri agenti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+:root{--porcelain:#edf2f6;--paper:#fbfdfe;--ink:#14264b;--muted:#566582;--cobalt:#2146b4;--cobalt-deep:#172f7c;--turquoise:#0b7d7d;--amber:#9a5b00;--line:#cdd8e4}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--porcelain);color:var(--ink);font:400 16px/1.5 "Golos Text",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+button,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+.app{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,44%);height:100dvh}
+.talk{display:flex;flex-direction:column;min-height:0}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:20px 32px 12px}
+h1{font-size:21px;font-weight:700;margin:0;letter-spacing:-.01em}
+.lang{display:flex;gap:4px}
+.lang button{border:0;background:none;padding:2px 8px;border-radius:4px;cursor:pointer;color:var(--muted)}
+.lang button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.scope{padding:0 32px 12px;color:var(--muted);font-size:14px;max-width:62ch}
+#log{flex:1;overflow:auto;padding:12px 32px 24px}
+.starter{max-width:60ch}
+.starter h2{font-size:30px;line-height:1.15;font-weight:700;margin:32px 0 20px;letter-spacing:-.015em}
+.starter button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:11px 0;cursor:pointer}
+.starter button:hover{color:var(--cobalt)}
+.q{margin:24px 0 8px;font-weight:600;max-width:62ch}
+.a{position:relative;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--line);padding:16px 18px;max-width:66ch;cursor:pointer}
+.a.verified{border-left-color:var(--turquoise)}
+.a.not_found,.a.table_only{border-left-color:var(--amber)}
+.a.error{border-left-color:#a33}
+.a.active{box-shadow:0 0 0 2px var(--cobalt)}
+.a p{margin:0 0 8px}.a p:last-child{margin:0}
+.a ul,.a ol{margin:6px 0 8px;padding-left:22px}
+.a strong{color:var(--cobalt-deep);font-weight:700}
+.seal{display:flex;gap:10px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
+.seal b{font-weight:600}
+.verified .seal b{color:var(--turquoise)}
+.not_found .seal b,.table_only .seal b{color:var(--amber)}
+.wait{color:var(--muted);margin-top:8px}
+form{display:flex;gap:10px;padding:14px 32px 20px;border-top:1px solid var(--line);background:var(--porcelain)}
+textarea{flex:1;resize:none;height:52px;padding:13px 14px;border:1px solid var(--line);background:var(--paper);border-radius:6px}
+form button{border:0;border-radius:6px;background:var(--cobalt);color:#fff;font-weight:600;padding:0 22px;cursor:pointer}
+form button:disabled{background:var(--muted);cursor:wait}
+.proof{background:var(--cobalt-deep);color:#e8eefb;overflow:auto;padding:24px 28px;min-height:0}
+.proof h2{font-size:18px;margin:0 0 4px;font-weight:600}
+.proof>p{color:#b7c5e6;margin:0 0 20px;font-size:14px;max-width:52ch}
+.step{margin-bottom:22px}
+.step h3{font-size:14px;font-weight:600;margin:0 0 6px;color:#fff}
+.step .note{font-size:14px;color:#b7c5e6;margin:0}
+pre{margin:0;padding:12px;background:#10225c;border-radius:4px;overflow:auto;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.tbl{overflow:auto;margin-top:8px;max-height:320px}
+table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{padding:5px 10px 5px 0;text-align:left;border-bottom:1px solid #3a5099;white-space:nowrap}
+th{position:sticky;top:0;background:var(--cobalt-deep);font-weight:600}
+td.n,th.n{text-align:right}
+.a .tbl th{background:var(--paper)}.a .tbl th,.a .tbl td{border-color:var(--line)}
+@media (max-width:860px){
+ .app{display:block;height:auto}
+ .talk{min-height:100dvh}
+ header,.scope,#log,form{padding-left:16px;padding-right:16px}
+ form{position:sticky;bottom:0}
+ .proof{padding:20px 16px}
+}
+@media (prefers-reduced-motion:no-preference){.a.new{animation:in .18s ease-out}@keyframes in{from{opacity:.4}to{opacity:1}}}
+</style>
+</head>
+<body>
+<div class="app">
+ <section class="talk">
+  <header><h1 id="title"></h1><div class="lang" role="group" aria-label="Til / Язык">
+   <button data-l="uz" type="button">Oʻz</button><button data-l="ru" type="button">Рус</button></div></header>
+  <p class="scope" id="scope"></p>
+  <div id="log" aria-live="polite"></div>
+  <form id="f"><textarea id="t" rows="1" aria-label="Savol" maxlength="1000"></textarea><button id="b" type="submit"></button></form>
+ </section>
+ <aside class="proof" id="proof"></aside>
+</div>
+<script>
+const T={uz:{title:"Birja reyestri agenti",scope:"2022-yil 3-yanvardan 2026-yil 30-oktabrgacha boʻlgan 500 000 bitim boʻyicha javob beradi. Maʼlumotlar oʻylab topilgan.",ask:"Soʻrash",ph:"Savolingizni yozing",start:"Bitimlar haqida soʻrang",ex:["2025-yilda eng koʻp sotilgan tovar qaysi?","Qaysi viloyatda sement savdosi eng katta?","2024-yilda eksport hajmi qancha boʻlgan?"],wait:s=>`Bazadan hisoblanyapti, ${s} s`,verified:"Bazaga qarshi tekshirildi",not_found:"Maʼlumotlarda yoʻq",table_only:"Faqat baza natijasi",error:"Javob berilmadi",pH:"Javob nimaga asoslangan",pP:"Javob tanlang: bu yerda agent bajargan har bir soʻrov va uning natijasi koʻrinadi.",ent:"Nom qidirildi",sql:"Bazaga soʻrov",rows:n=>`${n} qator`,none:"Topilmadi",exact:"aniq mos",similar:"oʻxshash, lekin boshqa obyekt",err:"Tarmoq xatosi. Savolni qayta yuboring.",nosteps:"Bu javob uchun bazaga soʻrov bajarilmagan."},
+ru:{title:"Агент реестра биржи",scope:"Отвечает по 500 000 сделок с 3 января 2022 по 30 октября 2026. Данные вымышленные.",ask:"Спросить",ph:"Напишите вопрос",start:"Спросите о сделках",ex:["Какой товар продавали больше всего в 2025 году?","В каком регионе самые большие продажи цемента?","Каков объём экспорта за 2024 год?"],wait:s=>`Считаю по базе, ${s} с`,verified:"Проверено по базе",not_found:"В данных нет",table_only:"Только результат базы",error:"Ответа нет",pH:"На чём основан ответ",pP:"Выберите ответ: здесь будут все запросы агента и их результаты.",ent:"Поиск названия",sql:"Запрос к базе",rows:n=>`${n} строк`,none:"Не найдено",exact:"точное совпадение",similar:"похожее, но другой объект",err:"Ошибка сети. Отправьте вопрос ещё раз.",nosteps:"Для этого ответа запросы к базе не выполнялись."}};
+let L=(()=>{try{return localStorage.getItem("lang")||"uz"}catch{return"uz"}})();
+const $=s=>document.querySelector(s),log=$("#log"),proof=$("#proof"),hist=[];
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function md(s){const lines=esc(s).split(/\n/);let h="",list=null;const close=()=>{if(list){h+=`</${list}>`;list=null}};
+ for(const raw of lines){const l=raw.trim().replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");let m;
+  if(m=l.match(/^[-*•]\s+(.*)/)){if(list!="ul"){close();h+="<ul>";list="ul"}h+=`<li>${m[1]}</li>`}
+  else if(m=l.match(/^\d+[.)]\s+(.*)/)){if(list!="ol"){close();h+="<ol>";list="ol"}h+=`<li>${m[1]}</li>`}
+  else{close();if(l)h+=`<p>${l}</p>`}}close();return h}
+const fmt=v=>typeof v=="number"?v.toLocaleString("ru-RU",{maximumFractionDigits:2}):esc(v);
+function table(c,r){return `<div class="tbl"><table><thead><tr>${c.map((x,i)=>`<th class="${typeof r[0]?.[i]=="number"?"n":""}">${esc(x)}</th>`).join("")}</tr></thead><tbody>${r.map(w=>`<tr>${w.map(v=>`<td class="${typeof v=="number"?"n":""}">${fmt(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
+function showProof(res,el){document.querySelectorAll(".a.active").forEach(x=>x.classList.remove("active"));
+ const t=T[L];let h=`<h2>${t.pH}</h2>`;
+ if(!res){proof.innerHTML=h+`<p>${t.pP}</p>`;return}
+ el&&el.classList.add("active");h+="<p></p>";
+ const st=res.steps.filter(s=>s.type!="error");if(!st.length)h+=`<p class="note">${t.nosteps}</p>`;
+ for(const s of st){if(s.type=="resolve"){h+=`<div class="step"><h3>${t.ent}: ${esc(s.text)}</h3><p class="note">${s.found.length?s.found.map((x,i)=>`${esc(x)} (${t[s.match[i]]||""})`).join("<br>"):t.none}</p></div>`}
+  else{h+=`<div class="step"><h3>${t.sql}</h3><pre>${esc(s.sql)}</pre>${s.error?`<p class="note">${esc(s.error)}</p>`:`<p class="note">${t.rows(s.row_count)}</p>${s.rows.length?table(s.columns,s.rows):""}`}</div>`}}
+ proof.innerHTML=h;proof.scrollTop=0}
+function paint(){const t=T[L];document.documentElement.lang=L;$("#title").textContent=t.title;$("#scope").textContent=t.scope;$("#b").textContent=t.ask;$("#t").placeholder=t.ph;
+ document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l==L));
+ if(!hist.length){log.innerHTML=`<div class="starter"><h2>${t.start}</h2>${t.ex.map(e=>`<button type="button">${esc(e)}</button>`).join("")}</div>`;log.querySelectorAll("button").forEach(b=>b.onclick=()=>send(b.textContent));showProof(null)}}
+document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{L=b.dataset.l;try{localStorage.setItem("lang",L)}catch{}paint()});
+async function send(q){q=q.trim();if(!q)return;const s=log.querySelector(".starter");if(s)s.remove();
+ const t=T[L];$("#t").value="";$("#b").disabled=true;
+ const qe=document.createElement("div");qe.className="q";qe.textContent=q;log.append(qe);
+ const w=document.createElement("div");w.className="wait";log.append(w);let sec=0;w.textContent=t.wait(0);
+ const tick=setInterval(()=>{w.textContent=T[L].wait(++sec)},1000);log.scrollTop=log.scrollHeight;
+ let res;try{const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:q,history:hist.slice(-3)})});if(!r.ok)throw 0;res=await r.json()}catch{res={answer:t.err,status:"error",steps:[],seconds:sec,language:L}}
+ clearInterval(tick);w.remove();
+ const a=document.createElement("div");a.className=`a new ${res.status}`;a.tabIndex=0;
+ const tt=T[res.language]||t;let extra="";
+ if(res.status=="table_only"){const l=[...res.steps].reverse().find(x=>x.rows&&x.rows.length);if(l)extra=table(l.columns,l.rows)}
+ a.innerHTML=md(res.answer)+extra+`<div class="seal"><b>${tt[res.status]}</b><span>${String(res.seconds).replace(".",",")} s</span></div>`;
+ a.onclick=()=>showProof(res,a);a.onkeydown=e=>{if(e.key=="Enter")showProof(res,a)};
+ log.append(a);hist.push({q,a:res.answer});showProof(res,a);log.scrollTop=log.scrollHeight;$("#b").disabled=false;$("#t").focus()}
+$("#f").onsubmit=e=>{e.preventDefault();send($("#t").value)};
+$("#t").onkeydown=e=>{if(e.key=="Enter"&&!e.shiftKey){e.preventDefault();$("#f").requestSubmit()}};
+paint();
+</script>
+</body>
+</html>
