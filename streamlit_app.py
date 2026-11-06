@@ -116,6 +116,25 @@ header[data-testid="stHeader"], footer, #MainMenu, [data-testid="stToolbar"], [d
 .message th{color:var(--ph); font-weight:600; position:sticky; top:0; background:#2a2b36;}
 .message td.n,.message th.n{text-align:right;}
 
+/* —— "Nimaga asoslangan" (fon jarayoni) —— */
+.basis{margin-top:16px; border:1px solid rgba(25,195,125,.55); border-radius:10px; background:#2b2c37; overflow:hidden;}
+.basis > summary{cursor:pointer; list-style:none; user-select:none; outline:none; display:flex; align-items:center; gap:10px;
+  padding:13px 16px; color:#fff; font-size:16px; font-weight:650; background:rgba(25,195,125,.12); transition:background .15s;}
+.basis > summary::-webkit-details-marker{display:none;}
+.basis > summary::before{content:"▸"; color:var(--accent); font-size:16px;}
+.basis[open] > summary::before{content:"▾";}
+.basis > summary::after{content:"bosing"; margin-left:auto; font-size:12px; font-weight:500; color:var(--accent); letter-spacing:.03em;}
+.basis[open] > summary::after{content:"yopish";}
+.basis > summary:hover{background:rgba(25,195,125,.22);}
+.basis > :not(summary){margin-left:16px; margin-right:16px;}
+.basis[open]{padding-bottom:16px;}
+.basis .bh{margin-top:16px; margin-bottom:6px; font-size:13px; font-weight:700; color:#d5d6e0; text-transform:uppercase; letter-spacing:.05em;}
+.basis .bl{font-size:15px; color:#ececf1; line-height:1.65; overflow-wrap:anywhere;}
+.basis .ok{color:var(--accent); font-weight:600;} .basis .bad{color:#ff7b72; font-weight:600;}
+.basis .sql{background:#20212a; border:1px solid #3d3e4c; border-radius:8px; padding:12px 14px; margin-top:6px; margin-bottom:8px; font:13px/1.6 ui-monospace,Consolas,monospace; color:#d6e2ff; white-space:pre-wrap; overflow:auto; max-height:280px;}
+.basis .tbl{margin-top:10px; max-height:300px;}
+.basis table{font-size:14px;}
+
 /* yozilayotgan kursor va "oʻylayapti" nuqtalari */
 .caret{display:inline-block; width:7px; height:1em; margin-left:2px; vertical-align:-2px; background:var(--accent); animation:blink 1s steps(1) infinite;}
 .dots{display:inline-flex; gap:5px; align-items:center; height:24px;}
@@ -307,6 +326,47 @@ def answer_table(res: dict) -> str:
     return ""
 
 
+STATUS_TXT = {
+    "verified": ("ok", "Javob bazadagi natija bilan tekshirildi"),
+    "table_only": ("bad", "Javob matni tekshiruvdan oʻtmadi, shuning uchun faqat bazadan olingan natija koʻrsatildi"),
+    "not_found": ("bad", "Maʼlumotlarda bu savolga javob topilmadi"),
+    "error": ("bad", "Hisob yakunlanmadi (xizmat xatosi yoki vaqt tugadi)"),
+}
+
+
+def basis_html(res: dict) -> str:
+    """“Nimaga asoslangan”: fonda nima boʻlgani: nomlarni aniqlash, bazaga yuborilgan SQL, natija, yakuniy holat."""
+    e = html.escape
+    kind, label = STATUS_TXT.get(res.get("status"), ("bad", "Nomaʼlum holat"))
+    sec = f" · {res['seconds']} s" if res.get("seconds") is not None else ""
+    p = [f'<div class="bh">Yakuniy holat</div><div class="bl"><span class="{kind}">●</span> {e(label)}{sec}</div>']
+    n = 0
+    for x in res.get("steps", []):
+        t = x.get("type")
+        if t == "resolve":
+            n += 1
+            found = ", ".join(e(str(v)) for v in (x.get("found") or [])[:3]) or "mos yozuv topilmadi"
+            p.append(f'<div class="bh">{n}. Nomni aniqlash</div><div class="bl">«{e(str(x.get("text", "")))}» ({e(str(x.get("kind", "")))}) → {found}</div>')
+        elif t == "sql":
+            n += 1
+            sql = e(str(x.get("sql", "")).strip()).replace("\n", "&#10;")
+            if x.get("error"):
+                state = f'<span class="bad">✗ Xato:</span> {e(str(x["error"])[:200])}'
+            else:
+                cnt = x.get("row_count", len(x.get("rows", [])))
+                state = f'<span class="ok">✓ Bajarildi:</span> {cnt} qator qaytdi' + (", jadvalda dastlabki 10 tasi" if cnt > 10 else "")
+            p.append(f'<div class="bh">{n}. Bazaga yuborilgan soʻrov (SQL)</div><div class="sql">{sql}</div><div class="bl">{state}</div>')
+            if x.get("rows"):
+                p.append(table_html(x["columns"], x["rows"][:10]))
+        elif t == "error":
+            n += 1
+            p.append(f'<div class="bh">{n}. Tahlil xizmati</div><div class="bl"><span class="bad">✗</span> Xizmatga ulanishda xato yuz berdi</div>')
+    if res.get("issues"):
+        items = "<br>".join("• " + e(str(i)) for i in res["issues"][:5])
+        p.append(f'<div class="bh">Tekshiruv izohlari</div><div class="bl">{items}</div>')
+    return '<details class="basis"><summary>Nimaga asoslangan</summary>' + "".join(p) + "</details>"
+
+
 # ───────────────────────── holat ─────────────────────────
 if "clear" in st.query_params:
     st.query_params.clear()
@@ -352,7 +412,7 @@ if sent and q.strip():
                     _CACHE[key] = res
         except Exception:  # fon xatolari foydalanuvchiga koʻrsatilmaydi
             res = {"answer": "Kechirasiz, hozir javob bera olmadim. Savolni qayta yuboring.", "status": "error", "steps": []}
-        text, tbl = res["answer"], answer_table(res)
+        text, tbl = res["answer"], answer_table(res) + basis_html(res)
         stream(slot, text, tbl)
     history.append({"role": "user", "content": q})
     history.append({"role": "bot", "content": text, "table": tbl})
